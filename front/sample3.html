@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAGEWeb - WWW Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="/example/shingle.js"></script>
+    <link rel="stylesheet" href="/example/shinglesite.css">
+    <style>
+        .toggle-checkbox:checked { right: 0; border-color: #68D391; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #68D391; }
+        .gs-btn-active   { background: #2563eb; color: #fff; }
+        .gs-btn-inactive { background: #f3f4f6; color: #6b7280; }
+        .gs-btn-inactive:hover { background: #e5e7eb; }
+        #shingle-stage .shingle-container { width: 100% !important; height: 100% !important; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+
+    <header class="bg-blue-900 text-white shadow-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-wide">SAGEWeb <span class="text-sm font-normal text-blue-300">| SpGEMM Graph Analytics</span></h1>
+            <div class="text-sm bg-blue-800 px-3 py-1 rounded">WWW Demo Version</div>
+        </div>
+        <div class="container mx-auto px-6 flex space-x-1">
+            <button onclick="switchTab('tab-overview')" id="btn-overview" class="px-6 py-3 bg-blue-800 text-blue-200 hover:bg-blue-700 font-bold rounded-t-lg transition">1. OVERVIEW</button>
+            <button onclick="switchTab('tab-upload')" id="btn-upload" class="px-6 py-3 bg-blue-800 text-blue-200 hover:bg-blue-700 font-bold rounded-t-lg transition">2. GRAPH UPLOAD</button>
+            <button onclick="switchTab('tab-execute')" id="btn-execute" class="px-6 py-3 bg-white text-blue-900 font-bold rounded-t-lg">3. ALGORITHM EXECUTION</button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-4">
+        <!-- TAB: OVERVIEW -->
+        <div id="tab-overview" class="bg-white p-8 rounded-lg shadow-md">
+            <div class="mb-8 border-b pb-6">
+                <h2 class="text-3xl font-bold mb-2 text-gray-800">Welcome to SAGEWeb</h2>
+                <p class="text-gray-600 text-lg">SAGEWeb is an interactive demo platform for SAGE, a storage-based SpGEMM system that scales large-scale graph analytics beyond main memory limits.</p>
+                <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                    <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">Conference: The Web Conference (WWW)</span>
+                    <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-semibold">Topic: Storage-Based SpGEMM</span>
+                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full font-semibold">Joint Work: Hanyang Univ. & Samsung Electronics</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center">
+                        <span class="bg-blue-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">1</span>
+                        Paper Abstract
+                    </h3>
+                    <p class="text-gray-600 text-sm leading-relaxed text-justify">
+                        Sparse generalized matrix-matrix multiplication (SpGEMM) is a fundamental operation for real-world network analysis. 
+                        With the increasing size of networks, single-machine methods lack scalability due to main memory limits, 
+                        while distributed systems suffer from heavy inter-machine communication overhead. 
+                        To address this dilemma, we propose <strong>SAGE</strong>, a novel storage-based SpGEMM approach that stores graphs in storage (e.g., SSD) 
+                        and loads only the necessary parts into main memory via a 3-layer architecture, achieving both high scalability and cost-efficiency.
+                    </p>
+                </div>
+
+                <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center">
+                        <span class="bg-blue-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">2</span>
+                        Core Challenges &amp; Strategies
+                    </h3>
+                    <ul class="space-y-3 text-sm text-gray-600">
+                        <li class="flex items-start">
+                            <span class="text-red-500 font-bold mr-2">C1. Workload Balancing:</span>
+                            <span>Power-law degree distributions cause thread imbalance. SAGE addresses this via <strong>Block-based Workload Allocation</strong>.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 font-bold mr-2">C2. Intermediate Handling:</span>
+                            <span>Massive intermediate results trigger heavy storage I/O. SAGE mitigates this via <strong>In-memory Partial Aggregation</strong>.</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-red-500 font-bold mr-2">C3. Memory Management:</span>
+                            <span>Fixed buffer structures cause overflows. SAGE solves this with <strong>Distribution-aware Memory Allocation</strong>.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-6 mb-8">
+                <h3 class="font-bold text-gray-800 text-xl mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2 text-blue-900" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    SAGE 3-Layer Architecture
+                </h3>
+                <p class="text-gray-600 text-sm mb-6">
+                    SAGE effectively coordinates data movement across three tightly coupled layers to optimize intra-machine storage-memory I/Os.
+                </p>
+                
+                <div class="flex flex-col items-center justify-center bg-gray-50 p-4 border rounded mb-6">
+                    <img src="ui/images/SageWeb_architecture.png" alt="SAGE 3-Layer Architecture Diagram" class="max-w-full h-auto max-h-80 object-contain rounded shadow border">
+                    <span class="text-xs text-gray-400 mt-2">Fig 1. Overview of SAGE with the 3-layer architecture (Storage, In-Memory, and Operation Layers).</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-gray-600">
+                    <div class="p-3 bg-blue-50 border border-blue-100 rounded">
+                        <h4 class="font-bold text-blue-900 mb-1">Storage Layer</h4>
+                        <p>Manages input/output matrices split into fixed-size block units in external storage (SSD).</p>
+                    </div>
+                    <div class="p-3 bg-green-50 border border-green-100 rounded">
+                        <h4 class="font-bold text-green-900 mb-1">In-Memory Layer</h4>
+                        <p>Handles dynamic block loading, manages index tables (pinned), and performs intermediate partial aggregation.</p>
+                    </div>
+                    <div class="p-3 bg-yellow-50 border border-yellow-100 rounded">
+                        <h4 class="font-bold text-yellow-900 mb-1">Operation Layer</h4>
+                        <p>Executes multi-threaded row-wise products using data fetched into in-memory buffers.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border border-gray-200 rounded-lg p-6">
+                <h3 class="font-bold text-gray-800 text-xl mb-4">SAGEWeb Analytics Pipeline</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+                    <div class="flex flex-col border border-dashed rounded p-4 bg-gray-50">
+                        <span class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Step 01</span>
+                        <h4 class="font-bold text-gray-700 mb-2">Graph Upload &amp; Format</h4>
+                        <p class="text-gray-500 text-xs leading-relaxed">
+                            Upload your target matrix graph. The system formats it into a block-centric structure optimized for storage-based SpGEMM processing.
+                        </p>
+                    </div>
+                    <div class="flex flex-col border border-dashed rounded p-4 bg-gray-50">
+                        <span class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Step 02</span>
+                        <h4 class="font-bold text-gray-700 mb-2">Algorithm Execution</h4>
+                        <p class="text-gray-500 text-xs leading-relaxed">
+                            Configure your execution hyperparameters (GPU processing, buffer size, thread count, and optimization flags) and run the selected graph algorithm via SpGEMM.
+                        </p>
+                    </div>
+                    <div class="flex flex-col border border-dashed rounded p-4 bg-gray-50">
+                        <span class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Step 03</span>
+                        <h4 class="font-bold text-gray-700 mb-2">Performance &amp; Analysis</h4>
+                        <p class="text-gray-500 text-xs leading-relaxed">
+                            Visualize execution time breakdown, storage-memory I/O savings, and compare performance directly with standard in-memory benchmarks.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: UPLOAD -->
+        <div id="tab-upload" class="bg-white p-8 rounded-lg shadow-md hidden">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">Graph Upload &amp; Management</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="font-semibold text-lg text-gray-700 mb-3">Upload New Graph</h3>
+                    <div class="border-2 border-dashed border-blue-400 bg-blue-50 rounded-lg p-6 text-blue-700 transition">
+                        <svg class="mx-auto h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                        <p class="font-bold text-lg text-center">Upload &amp; Preprocess Text Graph</p>
+                        <p class="text-sm mt-1 text-center">SpGEMM preprocessing runs automatically upon upload.</p>
+                        <div class="mt-4 space-y-2">
+                            <input id="upload-file" type="file" accept=".txt,.edges,.mtx" class="hidden" onchange="document.getElementById('upload-file-label').textContent = this.files[0]?.name || 'No file chosen'" />
+                            <div class="flex items-center gap-2 border border-blue-200 rounded bg-white px-2 py-1.5">
+                                <button type="button" onclick="document.getElementById('upload-file').click()" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200 hover:bg-blue-200 whitespace-nowrap">Choose File</button>
+                                <span id="upload-file-label" class="text-sm text-gray-500 truncate">No file chosen</span>
+                            </div>
+                            <input id="upload-dataset-name" type="text" placeholder="Dataset name (optional, e.g. Stanford)" class="w-full border border-blue-200 rounded p-2 bg-white text-sm" />
+                            <button id="btn-upload-run" onclick="uploadGraph()" class="w-full bg-[#009f9a] text-white font-bold py-2 px-3 rounded shadow hover:bg-[#008b87] transition">
+                                Upload + Preprocess
+                            </button>
+                            <div id="upload-status" class="text-xs text-gray-600"></div>
+                            <div id="upload-log" class="hidden mt-2 font-mono text-xs bg-gray-900 text-green-300 rounded p-3 max-h-48 overflow-y-auto whitespace-pre-wrap"></div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-gray-700 mb-3">Saved Graphs (Server Storage)</h3>
+                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-gray-100 text-gray-600 text-sm">
+                                <tr>
+                                    <th class="py-2 px-4 text-left">Graph Name</th>
+                                    <th class="py-2 px-4 text-right">Nodes</th>
+                                    <th class="py-2 px-4 text-right">Edges</th>
+                                    <th class="py-2 px-4 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataset-table-body" class="text-sm divide-y divide-gray-200">
+                                <tr><td colspan="4" class="py-3 px-4 text-center text-gray-400">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <!-- 차수 분포 + 히트맵 한 줄 -->
+            <div class="mt-6 grid grid-cols-2 gap-4">
+                <div id="deg-dist-panel" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-700 mb-3">
+                        Degree Distribution — <span id="deg-dist-title" class="text-blue-700"></span>
+                        <!-- <span class="text-xs text-gray-400 font-normal ml-2">(undirected, 상삼각 기준)</span> -->
+                    </h3>
+                    <div class="border border-gray-200 rounded-lg bg-white p-4" style="height:360px; position:relative;">
+                        <canvas id="deg-dist-canvas"></canvas>
+                    </div>
+                </div>
+                <div id="block-heatmap-panel" class="hidden">
+                    <h3 class="font-semibold text-lg text-gray-700 mb-1">
+                        Adjacency Block Heatmap — <span id="block-heatmap-title" class="text-blue-700"></span>
+                    </h3>
+                    <!-- <p class="text-xs text-gray-400 mb-2">노드를 ID 순서로 그룹화한 뒤 그룹 간 엣지 밀도를 색으로 표시합니다. 진할수록 연결이 많습니다.</p> -->
+                    <div class="border border-gray-200 rounded-lg bg-white p-4" style="position:relative; height:244px;">
+                        <canvas id="block-heatmap-canvas"></canvas>
+                        <div id="block-heatmap-loading" class="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: EXECUTE -->
+        <div id="tab-execute" class="bg-white p-4 rounded-lg shadow-md">
+            <div class="flex justify-between items-center mb-2 border-b pb-2">
+                <h2 class="text-2xl font-bold text-gray-800">Algorithm Execution</h2>
+                <div class="flex items-center space-x-3 bg-gray-100 p-2 rounded-lg border border-gray-200">
+                    <span class="text-sm font-bold text-gray-600">General Mode</span>
+                    <div class="relative inline-block w-12 mr-2 align-middle select-none">
+                        <input type="checkbox" id="mode-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer z-10" onclick="toggleMode()"/>
+                        <label for="mode-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                    <span class="text-sm font-bold text-red-500">Performance Mode</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                <!-- Col 1: Graph + Algorithm selection -->
+                <div class="col-span-1 border-r pr-4">
+                    <h3 class="font-bold text-gray-700 mb-2 text-sm">1. Select Graphs</h3>
+                    <label class="block text-xs text-gray-600 mb-1">Graph 1 (Matrix A)</label>
+                    <select id="graph-select-a" class="w-full border-gray-300 rounded-md border p-1.5 mb-3 bg-gray-50 text-sm">
+                        <option value="">Loading...</option>
+                    </select>
+                    <div id="graph-b-info" class="hidden"></div>
+
+                    <h3 class="font-bold text-gray-700 mb-2 text-sm">2. Select Algorithm</h3>
+                    <div class="space-y-0">
+                        <label class="flex items-center hover:bg-gray-50 p-1.5 rounded cursor-pointer"><input type="radio" name="algo" value="cn"    class="mr-2 w-3.5 h-3.5" onchange="updateParams()" checked> <span class="text-xs font-medium">Common Neighbor Finding</span></label>
+                        <label class="flex items-center hover:bg-gray-50 p-1.5 rounded cursor-pointer"><input type="radio" name="algo" value="lp"    class="mr-2 w-3.5 h-3.5" onchange="updateParams()"> <span class="text-xs font-medium">Link Prediction</span></label>
+                        <label class="flex items-center hover:bg-gray-50 p-1.5 rounded cursor-pointer"><input type="radio" name="algo" value="tc"    class="mr-2 w-3.5 h-3.5" onchange="updateParams()"> <span class="text-xs font-medium">Triangle Counting</span></label>
+                        <label class="flex items-center hover:bg-gray-50 p-1.5 rounded cursor-pointer"><input type="radio" name="algo" value="khop"  class="mr-2 w-3.5 h-3.5" onchange="updateParams()"> <span class="text-xs font-medium">k-hop Path Counting</span></label>
+                    </div>
+                </div>
+
+                <!-- Col 2: Description + Parameters -->
+                <div class="col-span-1 border-r pr-4">
+                    <div class="mb-3">
+                        <label class="block text-xs font-bold text-blue-800 mb-1 uppercase tracking-wide">Explanation</label>
+                        <div id="algo-description" class="px-1 pt-2 text-xs text-gray-700 leading-relaxed">
+                            <p id="algo-desc-ko"></p>
+                            <p id="algo-desc-en" class="text-gray-700 mt-0.5"></p>
+                        </div>
+                    </div>
+                    <div id="algo-params-container">
+                        <label class="block text-xs font-bold text-blue-800 mb-1 uppercase tracking-wide">Parameters</label>
+                        <div id="algo-params-content"></div>
+                    </div>
+                </div>
+
+                <!-- Col 3: Optimizations + Execute -->
+                <div class="col-span-1 flex flex-col justify-between">
+                    <div id="optimization-panel" class="opacity-30 pointer-events-none transition-opacity duration-300">
+                        <h3 class="font-bold text-red-600 mb-2 text-sm flex items-center">SAGE Optimizations</h3>
+                        <div class="space-y-2 text-sm bg-red-50 p-3 rounded border border-red-100">
+                            <label class="flex justify-between items-center"><span class="text-gray-700 font-medium">Block-based Workload Allocation</span> <input type="checkbox" id="opt-block-workload" checked class="w-4 h-4 text-red-600"></label>
+                            <label class="flex justify-between items-center"><span class="text-gray-700 font-medium">In-memory Partial Aggregation</span>  <input type="checkbox" id="opt-partial-agg"   checked class="w-4 h-4 text-red-600"></label>
+                            <label class="flex justify-between items-center border-b border-red-200 pb-2"><span class="text-gray-700 font-medium">GPU Processing</span> <input type="checkbox" id="gpu-toggle" class="w-4 h-4 text-red-600" onchange="toggleGPUStreams()"></label>
+                            <div class="pt-1">
+                                <label class="block text-gray-700 text-xs mb-1">Buffer Size</label>
+                                <select class="w-full border-red-200 rounded p-1.5 mb-2 bg-white text-sm">
+                                    <option value="128">128 MB</option><option value="256" selected>256 MB</option>
+                                    <option value="512">512 MB</option><option value="1024">1024 MB</option>
+                                    <option value="2048">2048 MB</option><option value="4096">4096 MB</option>
+                                </select>
+                                <label class="block text-gray-700 text-xs mb-1">Threads</label>
+                                <select id="threads-select" class="w-full border-red-200 rounded p-1.5 bg-white text-sm">
+                                    <option value="1">1 Threads</option><option value="2">2 Threads</option>
+                                    <option value="4">4 Threads</option><option value="8">8 Threads</option>
+                                    <option value="11" selected>11 Threads</option><option value="16">16 Threads</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-execute-run" onclick="runAlgo()" class="w-full mt-4 bg-blue-600 text-white font-bold py-3 px-4 rounded shadow hover:bg-blue-700 transition text-lg">
+                        EXECUTE
+                    </button>
+                </div>
+            </div>
+
+            <!-- Results section -->
+            <div class="mt-3">
+                <!-- Result tab headers -->
+                <div class="flex items-end border-b border-gray-300">
+                    <button id="btn-res-text"  onclick="switchResultTab('text')"  class="px-4 py-2 bg-white border border-gray-300 border-b-0 rounded-t font-bold text-gray-700">Text</button>
+                    <button id="btn-res-chart" onclick="switchResultTab('chart')" class="px-4 py-2 bg-gray-200 border border-gray-300 border-b-0 rounded-t text-gray-600 hover:bg-gray-100">Chart</button>
+                    <button id="btn-res-graph" onclick="switchResultTab('graph')" class="px-4 py-2 bg-gray-200 border border-gray-300 border-b-0 rounded-t text-gray-600 hover:bg-gray-100">Graphs</button>
+                    <div id="download-section" class="hidden ml-auto flex gap-1" id="download-buttons-wrap">
+                        <div class="flex gap-1" id="download-buttons"></div>
+                    </div>
+                </div>
+
+                <!-- Text -->
+                <div id="result-text" class="font-mono text-sm text-gray-700 bg-gray-50 p-4 border border-gray-300 border-t-0 rounded-b min-h-[300px]">
+                    &gt; SAGEWeb Engine Ready...<br>
+                    &gt; Waiting for execution request.<br>
+                    <span class="text-green-600">Status: Idle</span>
+                </div>
+
+                <!-- Chart -->
+                <div id="result-chart" class="hidden border border-gray-300 border-t-0 rounded-b bg-white p-4" style="height:520px;">
+                    <div class="relative w-full h-full">
+                        <canvas id="chart-canvas"></canvas>
+                        <div id="chart-empty" class="absolute inset-0 flex items-center justify-center text-gray-400 font-medium hidden">
+                            Chart will appear after algorithm execution.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graphs: sub-tabs -->
+                <div id="result-graph" class="hidden flex flex-col border border-gray-300 border-t-0 rounded-b bg-gray-50" style="height:560px;">
+                    <!-- Graph sub-tab buttons -->
+                    <div class="flex items-center space-x-1 border-b border-gray-200 bg-white px-3 py-1.5 shrink-0">
+                        <button onclick="switchGraphSubTab('result')"   id="btn-gs-result"   class="px-3 py-1 text-xs rounded font-semibold gs-btn-active">Result Graph</button>
+                        <button onclick="switchGraphSubTab('explorer')" id="btn-gs-explorer" class="px-3 py-1 text-xs rounded font-semibold gs-btn-inactive">Full Graph Explorer</button>
+                    </div>
+
+                    <!-- Result Graph (Cytoscape.js) -->
+                    <div id="gs-result" class="flex-1 relative overflow-hidden">
+                        <div class="absolute top-2 left-2 z-10 flex items-center space-x-2 pointer-events-none">
+                            <span id="graph-title" class="text-xs font-semibold text-gray-600 bg-white/90 px-2 py-1 rounded border border-gray-200 shadow-sm">Result Graph</span>
+                            <span id="graph-hint"  class="text-xs text-gray-400 bg-white/90 px-2 py-1 rounded border border-gray-200 shadow-sm">scroll to zoom · drag to pan</span>
+                        </div>
+                        <div id="cy-stage" class="w-full h-full">
+                            <div class="w-full h-full flex items-center justify-center text-gray-400 font-medium">Result graph will appear after algorithm execution.</div>
+                        </div>
+                    </div>
+
+                    <!-- Full Graph Explorer (shingle.js) -->
+                    <div id="gs-explorer" class="flex-1 relative overflow-hidden hidden">
+                        <div class="absolute top-2 left-2 z-10 flex items-center space-x-2">
+                            <span class="text-xs text-gray-600 bg-white/90 px-2 py-1 rounded border border-gray-200 shadow-sm">
+                                Full Graph: <span id="shingle-dataset-label" class="font-semibold text-blue-700">—</span>
+                            </span>
+                            <button onclick="reloadShingleExplorer()" class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded border border-blue-200 hover:bg-blue-200">Reload</button>
+                            <span id="shingle-node-info" class="text-xs text-gray-500 bg-white/90 px-2 py-1 rounded border border-gray-200 shadow-sm"></span>
+                        </div>
+                        <div id="shingle-stage" class="w-full h-full" style="position:relative; overflow:hidden;"></div>
+                    </div>
+                </div>
+
+            </div><!-- end results section -->
+
+
+        </div><!-- end tab-execute -->
+    </main>
+
+    <script>
+    // ----------------------------------------------------------------
+    // Tab navigation
+    // ----------------------------------------------------------------
+    function switchTab(tabId) {
+        ['tab-overview','tab-upload','tab-execute'].forEach(id => document.getElementById(id).classList.add('hidden'));
+        ['btn-overview','btn-upload','btn-execute'].forEach(id => {
+            document.getElementById(id).className = 'px-6 py-3 bg-blue-800 text-blue-200 hover:bg-blue-700 font-bold rounded-t-lg transition';
+        });
+        document.getElementById(tabId).classList.remove('hidden');
+        const activeBtn = 'btn-' + tabId.split('-')[1];
+        document.getElementById(activeBtn).className = 'px-6 py-3 bg-white text-blue-900 font-bold rounded-t-lg';
+        loadDatasets();
+    }
+
+    function toggleMode() {
+        const panel  = document.getElementById('optimization-panel');
+        const isPerf = document.getElementById('mode-toggle').checked;
+        if (isPerf) {
+            panel.classList.remove('opacity-30', 'pointer-events-none');
+            // 기본값: Block + Partial on, GPU off
+            document.getElementById('gpu-toggle').checked          = false;
+            document.getElementById('opt-block-workload').checked  = true;
+            document.getElementById('opt-partial-agg').checked     = true;
+            toggleGPUStreams();
+            // 스레드 11 고정
+            const t = document.getElementById('threads-select');
+            t.value = '11'; t.disabled = true;
+        } else {
+            panel.classList.add('opacity-30', 'pointer-events-none');
+            document.getElementById('gpu-toggle').checked         = false;
+            document.getElementById('opt-block-workload').checked = false;
+            document.getElementById('opt-partial-agg').checked   = false;
+            document.getElementById('threads-select').disabled = false;
+        }
+    }
+
+    function toggleGPUStreams() {
+        const gpuOn = document.getElementById('gpu-toggle').checked;
+        const blockChk = document.getElementById('opt-block-workload');
+        const partialChk = document.getElementById('opt-partial-agg');
+        blockChk.disabled = gpuOn;
+        partialChk.disabled = gpuOn;
+        blockChk.closest('label').style.opacity = gpuOn ? '0.4' : '1';
+        partialChk.closest('label').style.opacity = gpuOn ? '0.4' : '1';
+    }
+
+    // ----------------------------------------------------------------
+    // Result tab switching
+    // ----------------------------------------------------------------
+    function switchResultTab(tabName) {
+        ['text','chart','graph'].forEach(name => {
+            document.getElementById('result-' + name).classList.add('hidden');
+            const btn = document.getElementById('btn-res-' + name);
+            btn.classList.remove('bg-white','font-bold','text-gray-700');
+            btn.classList.add('bg-gray-200','text-gray-600');
+        });
+        document.getElementById('result-' + tabName).classList.remove('hidden');
+        const ab = document.getElementById('btn-res-' + tabName);
+        ab.classList.remove('bg-gray-200','text-gray-600');
+        ab.classList.add('bg-white','font-bold','text-gray-700');
+
+        if (tabName === 'chart' && _lastFiles) renderChart(_lastFiles, _lastAlgo, _lastK, _lastTopk);
+        if (tabName === 'graph' && _lastFiles) renderCytoscape(_lastFiles, _lastAlgo, _lastK, _lastTopk);
+    }
+
+    // ----------------------------------------------------------------
+    // Graph sub-tab switching
+    // ----------------------------------------------------------------
+    function switchGraphSubTab(name) {
+        ['result','explorer'].forEach(n => {
+            const btn   = document.getElementById('btn-gs-' + n);
+            const panel = document.getElementById('gs-' + n);
+            if (n === name) {
+                btn.classList.add('gs-btn-active');   btn.classList.remove('gs-btn-inactive');
+                panel.classList.remove('hidden');
+            } else {
+                btn.classList.remove('gs-btn-active'); btn.classList.add('gs-btn-inactive');
+                panel.classList.add('hidden');
+            }
+        });
+        if (name === 'explorer') {
+            initShingleExplorer(document.getElementById('graph-select-a').value);
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // Chart rendering (Chart.js)
+    // ----------------------------------------------------------------
+    let _chartInstance = null;
+
+    function parseChartData(files, algo, k, topk) {
+        const kv = parseInt(k) || 2;
+        const tk = Math.min(parseInt(topk) || 10, 100);
+        const getFile = hint => files.find(f => f.content && f.label.toLowerCase().includes(hint))?.content || '';
+
+        const parsePairs = (content, limit) =>
+            content.split('\n')
+                .map(l => { const m = l.match(/^(\d+)\s*-\s*(\d+)\s*:\s*([\d.eE+\-]+)/); return m ? { label: `${m[1]}-${m[2]}`, val: +m[3] } : null; })
+                .filter(Boolean).sort((a, b) => b.val - a.val).slice(0, limit);
+
+        switch (algo) {
+            case 'cn': {
+                const pairs = parsePairs(getFile('count'), tk);
+                return { labels: pairs.map(p => p.label), data: pairs.map(p => p.val), yLabel: 'Common Neighbors', color: 'rgba(37,99,235,0.75)' };
+            }
+            case 'lp': {
+                const pairs = parsePairs(getFile('jaccard'), tk);
+                return { labels: pairs.map(p => p.label), data: pairs.map(p => p.val), yLabel: 'Jaccard Score', color: 'rgba(124,58,237,0.75)' };
+            }
+            case 'tc': {
+                const nodes = getFile('count').split('\n').slice(1)
+                    .map(l => { const m = l.match(/^(\d+)\s*:\s*([\d.]+)/); return m ? { label: `Node ${m[1]}`, val: +m[2] } : null; })
+                    .filter(Boolean).sort((a, b) => b.val - a.val).slice(0, tk);
+                return { labels: nodes.map(n => n.label), data: nodes.map(n => n.val), yLabel: 'Triangle Count', color: 'rgba(220,38,38,0.75)' };
+            }
+            case 'khop': {
+                const pairs = parsePairs(getFile('count'), tk);
+                return { labels: pairs.map(p => p.label), data: pairs.map(p => p.val), yLabel: `${kv}-hop Count`, color: 'rgba(5,150,105,0.75)' };
+            }
+            default: return { labels: [], data: [], yLabel: 'Value', color: 'rgba(100,100,100,0.75)' };
+        }
+    }
+
+    function renderChart(files, algo, k, topk) {
+        const canvas = document.getElementById('chart-canvas');
+        const empty  = document.getElementById('chart-empty');
+        if (!canvas) return;
+
+        const { labels, data, yLabel, color } = parseChartData(files, algo, k, topk);
+
+        if (_chartInstance) { _chartInstance.destroy(); _chartInstance = null; }
+
+        if (!labels.length) {
+            empty.classList.remove('hidden'); return;
+        }
+        empty.classList.add('hidden');
+
+        _chartInstance = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ label: yLabel, data, backgroundColor: color, borderColor: color.replace('0.75','1'), borderWidth: 1 }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    title: { display: true, text: `${algo.toUpperCase()} — Top-${data.length} by ${yLabel}`, font: { size: 13 } },
+                },
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: yLabel } },
+                    x: { ticks: { maxRotation: 55, font: { size: 9 } } },
+                },
+            },
+        });
+    }
+
+    // ----------------------------------------------------------------
+    // Result graph (Cytoscape.js)
+    // ----------------------------------------------------------------
+    let _cyInstance = null;
+
+    function parseResultToElements(files, algo, k, topk) {
+        const kv = parseInt(k) || 2;
+        const tk = Math.min(parseInt(topk) || 10, 100);
+        const getFile = hint => files.find(f => f.content && f.label.toLowerCase().includes(hint))?.content || '';
+
+        const nodeMap = new Map(); // id -> {id, score}
+        const edgeMap = new Map(); // key -> {from, to, weight}
+
+        const addNode = (id, score = 0) => {
+            const key = String(id);
+            if (!nodeMap.has(key)) nodeMap.set(key, { id: key, score });
+            else if (score > nodeMap.get(key).score) nodeMap.get(key).score = score;
+        };
+        const addEdge = (a, b, w = 1) => {
+            const ka = String(a), kb = String(b);
+            if (ka === kb) return;
+            const key = ka < kb ? `${ka}:${kb}` : `${kb}:${ka}`;
+            if (!edgeMap.has(key)) edgeMap.set(key, { from: ka, to: kb, weight: w });
+            else edgeMap.get(key).weight += w;
+        };
+
+        if (algo === 'cn') {
+            getFile('count').split('\n')
+                .map(l => { const m = l.match(/^(\d+)\s*-\s*(\d+)\s*:\s*([\d.]+)/); return m ? [+m[1],+m[2],+m[3]] : null; })
+                .filter(Boolean).sort((a,b) => b[2]-a[2]).slice(0, tk)
+                .forEach(([u, v, c]) => { addNode(u, c); addNode(v, c); addEdge(u, v, c); });
+            // common neighbors from IDs file
+            getFile('ids').split('\n').forEach(l => {
+                const ci = l.indexOf(':');
+                if (ci < 0) return;
+                const head = l.slice(0, ci).match(/^(\d+)\s*-\s*(\d+)/);
+                if (!head || !nodeMap.has(head[1]) || !nodeMap.has(head[2])) return;
+                l.slice(ci + 1).split(/[\s,]+/).filter(t => /^\d+$/.test(t)).slice(0, 10).forEach(cn => {
+                    addNode(+cn, 0); addEdge(+head[1], +cn, 0.5); addEdge(+head[2], +cn, 0.5);
+                });
+            });
+        } else if (algo === 'lp') {
+            getFile('jaccard').split('\n')
+                .map(l => { const m = l.match(/^(\d+)\s*-\s*(\d+)\s*:\s*([\d.eE+\-]+)/); return m ? [+m[1],+m[2],+m[3]] : null; })
+                .filter(Boolean).sort((a,b) => b[2]-a[2]).slice(0, tk)
+                .forEach(([u, v, s]) => { addNode(u, s); addNode(v, s); addEdge(u, v, Math.max(1, Math.round(s * 10))); });
+        } else if (algo === 'tc') {
+            const countLines = getFile('count').split('\n').slice(1);
+            countLines.map(l => { const m = l.match(/^(\d+)\s*:\s*([\d.]+)/); return m ? [+m[1],+m[2]] : null; })
+                .filter(Boolean).sort((a,b) => b[1]-a[1]).slice(0, tk).forEach(([id, c]) => addNode(id, c));
+            getFile('components').split('\n').slice(0, tk).forEach(l => {
+                const ci = l.indexOf(':');
+                if (ci < 0) return;
+                const center = l.slice(0, ci).trim();
+                if (!nodeMap.has(center)) return;
+                l.slice(ci + 1).split(',').forEach(triple => {
+                    const nums = triple.match(/\d+/g) || [];
+                    if (nums.length < 3) return;
+                    nums.forEach(n => addNode(+n, 0));
+                    addEdge(+nums[0], +nums[1]); addEdge(+nums[1], +nums[2]); addEdge(+nums[0], +nums[2]);
+                });
+            });
+        } else if (algo === 'khop') {
+            getFile('path').split('\n').slice(0, tk).forEach(l => {
+                const ci = l.indexOf(':');
+                if (ci < 0) return;
+                const pairMatch = l.slice(0, ci).match(/(\d+)\s*-\s*(\d+)/);
+                if (pairMatch) { addNode(+pairMatch[1], 0); addNode(+pairMatch[2], 0); }
+                l.slice(ci + 1).split(',').forEach(seg => {
+                    const nums = seg.match(/\d+/g) || [];
+                    nums.forEach(n => addNode(+n, 0));
+                    for (let i = 0; i < nums.length - 1; i++) addEdge(+nums[i], +nums[i+1]);
+                });
+            });
+        }
+
+        // Scale node sizes by score
+        const scores = [...nodeMap.values()].map(n => n.score);
+        const maxScore = Math.max(...scores, 1);
+        for (const n of nodeMap.values()) n.size = 18 + Math.round(n.score / maxScore * 24);
+
+        return {
+            nodes: [...nodeMap.values()],
+            edges: [...edgeMap.values()],
+        };
+    }
+
+    const ALGO_COLORS = {
+        cn:   { node: '#2563eb', edge: '#93c5fd', nodeHover: '#1d4ed8' },
+        lp:   { node: '#7c3aed', edge: '#c4b5fd', nodeHover: '#6d28d9' },
+        tc:   { node: '#dc2626', edge: '#fca5a5', nodeHover: '#b91c1c' },
+        khop: { node: '#059669', edge: '#6ee7b7', nodeHover: '#047857' },
+    };
+
+    function renderCytoscape(files, algo, k, topk) {
+        const container = document.getElementById('cy-stage');
+        const title     = document.getElementById('graph-title');
+        if (!container) return;
+
+        if (_cyInstance) { _cyInstance.destroy(); _cyInstance = null; }
+
+        const el   = parseResultToElements(files, algo, k, topk);
+        const cols = ALGO_COLORS[algo] || ALGO_COLORS.cn;
+
+        if (!el.nodes.length) {
+            container.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400 font-medium">No result data available.</div>';
+            title.textContent = 'Result Graph';
+            return;
+        }
+
+        title.textContent = `${algo.toUpperCase()} — ${el.nodes.length} nodes · ${el.edges.length} edges`;
+        container.innerHTML = '';
+
+        const layoutName = algo === 'tc' ? 'concentric' : 'cose';
+
+        _cyInstance = cytoscape({
+            container,
+            elements: [
+                ...el.nodes.map(n => ({ data: { id: n.id, label: n.id, size: n.size, score: n.score } })),
+                ...el.edges.map(e => ({ data: { id: `e_${e.from}_${e.to}`, source: e.from, target: e.to, weight: e.weight } })),
+            ],
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': cols.node,
+                        'label': 'data(label)',
+                        'width':  'data(size)',
+                        'height': 'data(size)',
+                        'font-size': '9px',
+                        'color': '#ffffff',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'text-outline-color': cols.node,
+                        'text-outline-width': '2px',
+                        'min-zoomed-font-size': 6,
+                    },
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 'mapData(weight, 0.5, 20, 1, 6)',
+                        'line-color': cols.edge,
+                        'curve-style': 'bezier',
+                        'opacity': 0.75,
+                    },
+                },
+                { selector: 'node:selected',      style: { 'background-color': '#f59e0b', 'border-color': '#d97706', 'border-width': '3px' } },
+                { selector: 'node:active',         style: { 'overlay-opacity': 0.2 } },
+                { selector: '.dimmed',             style: { 'opacity': 0.12 } },
+                { selector: 'node.hl',             style: { 'background-color': cols.node, 'text-outline-color': cols.node, 'border-width': 0, 'opacity': 1 } },
+                { selector: 'edge.hl-triangle',    style: { 'line-color': cols.edge, 'width': 4, 'opacity': 0.75 } },
+                { selector: 'edge.hl-path',        style: { 'line-color': cols.edge, 'width': 4, 'opacity': 0.75 } },
+                { selector: 'edge.hl-predicted',   style: { 'line-color': '#a855f7', 'width': 3, 'line-style': 'dashed', 'opacity': 0.75 } },
+            ],
+            layout: (() => {
+                const w = container.offsetWidth  || 600;
+                const h = container.offsetHeight || 600;
+                const bb = { x1: 0, y1: 0, w, h };
+                if (layoutName === 'concentric')
+                    return { name: 'concentric', animate: false, boundingBox: bb, concentric: n => n.data('score') || 0, levelWidth: () => 1 };
+                // cose (cn, lp, khop)
+                return { name: 'cose', animate: false, boundingBox: bb, nodeRepulsion: () => 8000, idealEdgeLength: () => 60, gravity: 1, fit: true };
+            })(),
+            wheelSensitivity: 0.3,
+        });
+
+        const INTERACTION_HINT = {
+            cn:   'click a node to highlight its common neighbors',
+            lp:   'click a node to show its best predicted link',
+            tc:   'click a node to highlight its triangles',
+            khop: 'click a node to highlight its paths',
+        };
+        document.getElementById('graph-hint').textContent = INTERACTION_HINT[algo] || 'scroll to zoom · drag to pan';
+        setupInteractions(_cyInstance, files, algo);
+    }
+
+    function setupInteractions(cy, files, algo) {
+        const getFile = hint => files.find(f => f.content && f.label.toLowerCase().includes(hint))?.content || '';
+        const hint = document.getElementById('graph-hint');
+
+        function resetHL() {
+            cy.elements().removeClass('dimmed hl hl-triangle hl-path hl-predicted');
+            hint.textContent = INTERACTION_HINT[algo] || 'scroll to zoom · drag to pan';
+        }
+
+        cy.on('tap', evt => { if (evt.target === cy) resetHL(); });
+
+        cy.on('tap', 'node', evt => {
+            const nid = evt.target.id();
+            resetHL();
+            cy.elements().addClass('dimmed');
+
+            if (algo === 'tc') {
+                // 이 노드가 포함된 삼각형 강조
+                const triangles = [];
+                for (const line of getFile('components').split('\n')) {
+                    const ci = line.indexOf(':');
+                    if (ci < 0) continue;
+                    line.slice(ci + 1).split(',').forEach(triple => {
+                        const nums = (triple.match(/\d+/g) || []).slice(0, 3);
+                        if (nums.length === 3 && nums.includes(nid)) triangles.push(nums);
+                    });
+                }
+                triangles.forEach(([a, b, c]) => {
+                    [a, b, c].forEach(id => cy.$id(id).removeClass('dimmed').addClass('hl'));
+                    [[a,b],[b,c],[a,c]].forEach(([u,v]) =>
+                        cy.edges(`[source="${u}"][target="${v}"],[source="${v}"][target="${u}"]`)
+                          .removeClass('dimmed').addClass('hl-triangle'));
+                });
+                hint.textContent = triangles.length
+                    ? `Node ${nid}: ${triangles.length} triangle(s) highlighted`
+                    : `Node ${nid}: no triangles found`;
+
+            } else if (algo === 'lp') {
+                // 이 노드의 최고 Jaccard 예측 엣지 강조
+                const best = getFile('jaccard').split('\n')
+                    .map(l => { const m = l.match(/^(\d+)\s*-\s*(\d+)\s*:\s*([\d.eE+\-]+)/); return m ? [m[1], m[2], +m[3]] : null; })
+                    .filter(p => p && (p[0] === nid || p[1] === nid))
+                    .sort((a, b) => b[2] - a[2])[0];
+                if (best) {
+                    const [a, b, score] = best;
+                    cy.$id(a).removeClass('dimmed').addClass('hl');
+                    cy.$id(b).removeClass('dimmed').addClass('hl');
+                    cy.edges(`[source="${a}"][target="${b}"],[source="${b}"][target="${a}"]`)
+                      .removeClass('dimmed').addClass('hl-predicted');
+                    hint.textContent = `Best predicted link: ${a} ↔ ${b}  (Jaccard: ${score.toFixed(4)})`;
+                }
+
+            } else if (algo === 'khop') {
+                // 이 노드에서 출발하거나 도착하는 경로 강조
+                const paths = [];
+                for (const line of getFile('path').split('\n')) {
+                    const ci = line.indexOf(':');
+                    if (ci < 0) continue;
+                    const pairMatch = line.slice(0, ci).match(/(\d+)\s*-\s*(\d+)/);
+                    if (!pairMatch) continue;
+                    if (pairMatch[1] !== nid && pairMatch[2] !== nid) continue;
+                    line.slice(ci + 1).split(',').forEach(seg => {
+                        const nums = seg.match(/\d+/g);
+                        if (nums) paths.push(nums);
+                    });
+                }
+                paths.forEach(path => {
+                    path.forEach(id => cy.$id(id).removeClass('dimmed').addClass('hl'));
+                    for (let i = 0; i < path.length - 1; i++)
+                        cy.edges(`[source="${path[i]}"][target="${path[i+1]}"],[source="${path[i+1]}"][target="${path[i]}"]`)
+                          .removeClass('dimmed').addClass('hl-path');
+                });
+                hint.textContent = paths.length
+                    ? `Node ${nid}: ${paths.length} path(s) highlighted`
+                    : `Node ${nid}: no paths found`;
+
+            } else if (algo === 'cn') {
+                // 이 노드가 포함된 쌍의 공통이웃 강조
+                const cnNodes = new Set([nid]);
+                const pairEdges = [];
+                for (const line of getFile('ids').split('\n')) {
+                    const ci = line.indexOf(':');
+                    if (ci < 0) continue;
+                    const head = line.slice(0, ci).match(/^(\d+)\s*-\s*(\d+)/);
+                    if (!head || (head[1] !== nid && head[2] !== nid)) continue;
+                    const partner = head[1] === nid ? head[2] : head[1];
+                    cnNodes.add(partner);
+                    line.slice(ci + 1).split(/[\s,]+/).filter(t => /^\d+$/.test(t)).slice(0, 10).forEach(cn => {
+                        cnNodes.add(cn);
+                        pairEdges.push([nid, cn], [partner, cn]);
+                    });
+                }
+                cnNodes.forEach(id => cy.$id(id).removeClass('dimmed').addClass('hl'));
+                pairEdges.forEach(([u, v]) =>
+                    cy.edges(`[source="${u}"][target="${v}"],[source="${v}"][target="${u}"]`)
+                      .removeClass('dimmed').addClass('hl-path'));
+                hint.textContent = `Node ${nid}: ${cnNodes.size - 1} related node(s) highlighted`;
+            }
+        });
+    }
+
+    const INTERACTION_HINT = {
+        cn:   'click a node to highlight its common neighbors',
+        lp:   'click a node to show its best predicted link',
+        tc:   'click a node to highlight its triangles',
+        khop: 'click a node to highlight its paths',
+    };
+
+    // ----------------------------------------------------------------
+    // Full Graph Explorer (shingle.js)
+    // ----------------------------------------------------------------
+    let _shingleDataset = null;
+
+    function initShingleExplorer(dataset) {
+        if (!dataset) return;
+        const stage = document.getElementById('shingle-stage');
+        const label = document.getElementById('shingle-dataset-label');
+        label.textContent = dataset;
+
+        if (_shingleDataset === dataset) return; // 이미 초기화됨
+
+        stage.innerHTML = '<div class="w-full h-full flex items-center justify-center text-gray-400 text-sm">Loading graph view...</div>';
+
+        fetch(`/graph-data/${encodeURIComponent(dataset)}/mapinfo.json`)
+            .then(r => { if (!r.ok) throw new Error('not_ready'); return r.json(); })
+            .then(() => {
+                _shingleDataset = dataset;
+                stage.innerHTML = '';
+                const wrap = document.createElement('div');
+                wrap.style.width  = '100%';
+                wrap.style.height = '100%';
+                stage.appendChild(wrap);
+
+                shingle.new({
+                    el: wrap,
+                    graphPath: `/graph-data/${encodeURIComponent(dataset)}/`,
+                    width:  '100%',
+                    height: '100%',
+                    drawAll: false,
+                    nodeRadiusScaleFactor: 1.0 / 800,
+                    nodeRadiusScalePower:  0.4,
+                    initialZoom: 5,
+                    animateZoom: false,
+                    wheelZoom:   true,
+                    quadDisplayThreshold: 0.12,
+                    onClear: () => { document.getElementById('shingle-node-info').textContent = ''; },
+                    onFocus: (quadid, nodeid) => {
+                        document.getElementById('shingle-node-info').textContent = `Node: ${nodeid}`;
+                    },
+                });
+            })
+            .catch(() => {
+                stage.innerHTML =
+                    '<div class="w-full h-full flex items-center justify-center text-center text-gray-400 text-sm px-8">' +
+                    'Graph view is being prepared or this graph has not been uploaded yet.<br>' +
+                    'Please upload the graph or click the Reload button.</div>';
+            });
+    }
+
+    function reloadShingleExplorer() {
+        _shingleDataset = null;
+        initShingleExplorer(document.getElementById('graph-select-a').value);
+    }
+
+    // ----------------------------------------------------------------
+    // Algorithm parameter UI
+    // ----------------------------------------------------------------
+    const ALGO_DESCRIPTIONS = {
+        cn:   { ko: 'SpGEMM(A×A)으로 두 노드의 공통 이웃 수를 계산합니다. 소셜 추천·유사도 분석에 활용됩니다.', en: 'Counts common neighbors between node pairs via SpGEMM(A×A). Used for social recommendation and similarity analysis.' },
+        lp:   { ko: 'A×A SpGEMM 후 degree로 Jaccard 유사도를 산출해 미래 링크 생성 가능성을 예측합니다.',      en: 'Computes Jaccard similarity from A×A SpGEMM and node degrees to predict future link formation.' },
+        tc:   { ko: 'A²×A SpGEMM의 대각 원소로 각 노드의 삼각형 참여 수를 계산합니다. 커뮤니티 감지·클러스터링에 활용됩니다.', en: 'Counts triangle participation per node using diagonal entries of A²×A SpGEMM. Used for community detection and clustering.' },
+        khop: { ko: 'SpGEMM을 k회 반복해 k-hop 내 도달 가능한 경로 수를 계산합니다. 노드 간 관계 강도 분석에 활용됩니다.',      en: 'Iterates SpGEMM k times to count reachable paths within k hops. Used for analyzing relationship strength between nodes.' },
+    };
+
+    function updateGraphBInfo() {
+        const algo = document.querySelector('input[name="algo"]:checked').value;
+        const k    = getParamInt('param-k', 3);
+        const info = document.getElementById('graph-b-info');
+        if (!info) return;
+        const formulas = { cn: 'A × A', lp: 'A × A', tc: 'A² × A' };
+        if (algo === 'khop') {
+            const khop = { 2: 'A × A', 3: 'A² × A', 4: 'A² × A²' };
+            info.textContent = khop[k] || khop[3];
+        } else {
+            info.textContent = formulas[algo] || '';
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // 공통 커스텀 드롭다운
+    // ----------------------------------------------------------------
+    let _openDropdownId = null;
+
+    function buildCustomDropdown({ id, label, values, defaultVal, onChange }) {
+        const listId = id + '-list';
+        const btnId  = id + '-btn';
+        const dispId = id + '-display';
+        let opts = values.map(v =>
+            `<div class="custom-dd-opt px-2 py-0.5 cursor-pointer hover:bg-blue-50 text-sm text-right${v === defaultVal ? ' bg-blue-100 font-semibold' : ''}"
+                  data-dd="${id}" data-val="${v}">${v}</div>`
+        ).join('');
+        const onchangeAttr = onChange ? `data-onchange="${onChange}"` : '';
+        return `<div class="flex items-center justify-between">
+            <label class="text-sm text-gray-700">${label}</label>
+            <div class="relative inline-block">
+                <input type="hidden" id="${id}" value="${defaultVal}" ${onchangeAttr}>
+                <button type="button" id="${btnId}" onclick="toggleCustomDropdown(event,'${id}')"
+                    class="border border-gray-300 rounded text-sm bg-white flex items-center justify-between w-20 px-2 py-1 cursor-pointer">
+                    <span id="${dispId}">${defaultVal}</span>
+                    <span class="text-gray-400 text-xs ml-1">&#9660;</span>
+                </button>
+                <div id="${listId}" class="hidden fixed bg-white border border-gray-300 rounded shadow-lg z-50 overflow-y-auto" style="width:80px; max-height:200px;">${opts}</div>
+            </div>
+        </div>`;
+    }
+
+    function toggleCustomDropdown(event, id) {
+        event.stopPropagation();
+        const listId = id + '-list';
+        const btnId  = id + '-btn';
+        const list   = document.getElementById(listId);
+        const btn    = document.getElementById(btnId);
+        if (!list) return;
+
+        // 다른 드롭다운 닫기
+        if (_openDropdownId && _openDropdownId !== id) {
+            const prev = document.getElementById(_openDropdownId + '-list');
+            if (prev) prev.classList.add('hidden');
+        }
+
+        if (list.classList.contains('hidden')) {
+            const rect = btn.getBoundingClientRect();
+            list.style.top  = rect.bottom + 'px';
+            list.style.left = rect.left + 'px';
+            list.classList.remove('hidden');
+            _openDropdownId = id;
+            // 현재 선택값으로 스크롤
+            const cur = parseInt(document.getElementById(id).value);
+            const items = list.querySelectorAll('.custom-dd-opt');
+            const idx   = [...items].findIndex(el => parseInt(el.dataset.val) === cur);
+            if (idx >= 0) list.scrollTop = Math.max(0, idx * 24 - 80);
+        } else {
+            list.classList.add('hidden');
+            _openDropdownId = null;
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!_openDropdownId) return;
+        const list = document.getElementById(_openDropdownId + '-list');
+        const btn  = document.getElementById(_openDropdownId + '-btn');
+        if (list && !list.contains(e.target) && btn && !btn.contains(e.target)) {
+            list.classList.add('hidden');
+            _openDropdownId = null;
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        const opt = e.target.closest('.custom-dd-opt');
+        if (!opt) return;
+        const id  = opt.dataset.dd;
+        const val = opt.dataset.val;
+        const hidden  = document.getElementById(id);
+        const display = document.getElementById(id + '-display');
+        const list    = document.getElementById(id + '-list');
+        if (hidden)  hidden.value = val;
+        if (display) display.textContent = val;
+        if (list) {
+            list.querySelectorAll('.custom-dd-opt').forEach(el => {
+                el.classList.toggle('bg-blue-100',  el.dataset.val === val);
+                el.classList.toggle('font-semibold', el.dataset.val === val);
+            });
+            list.classList.add('hidden');
+        }
+        _openDropdownId = null;
+        // onchange 콜백 실행
+        if (hidden && hidden.dataset.onchange) window[hidden.dataset.onchange]();
+    });
+
+    function buildTopkSelect(defaultVal) {
+        const values = Array.from({length: 100}, (_, i) => i + 1);
+        return buildCustomDropdown({ id: 'param-topk', label: 'Top-K: <span class="text-xs text-gray-400">(max 100)</span>', values, defaultVal });
+    }
+
+    function buildMaxPathsSelect(defaultVal) {
+        return buildCustomDropdown({ id: 'param-max-paths', label: 'Max Paths:', values: [5, 10, 20, 50, 100], defaultVal });
+    }
+
+    function buildHopsSelect(defaultVal) {
+        return buildCustomDropdown({ id: 'param-k', label: 'Number of Hops (k): <span class="text-xs text-gray-400">(max 3)</span>', values: [2, 3], defaultVal, onChange: 'updateGraphBInfo' });
+    }
+
+    function updateParams() {
+        const algo    = document.querySelector('input[name="algo"]:checked').value;
+        const content = document.getElementById('algo-params-content');
+        const topkSelect  = buildTopkSelect(10);
+        const maxPathsSel = buildMaxPathsSelect(20);
+
+        if (algo === 'cn') {
+            content.innerHTML = `<div class="space-y-2">${topkSelect}</div>`;
+        } else if (algo === 'lp') {
+            content.innerHTML = `<div class="space-y-2">${topkSelect}</div>`;
+        } else if (algo === 'tc') {
+            content.innerHTML = `<div class="space-y-2">${topkSelect}${maxPathsSel}</div>`;
+        } else if (algo === 'khop') {
+            content.innerHTML = `<div class="space-y-2">${buildHopsSelect(3)}${topkSelect}${maxPathsSel}</div>`;
+        }
+
+        const desc = ALGO_DESCRIPTIONS[algo] || {};
+        // document.getElementById('algo-desc-ko').textContent = desc.ko || '';
+        document.getElementById('algo-desc-en').textContent = desc.en || '';
+        updateGraphBInfo();
+    }
+
+    function getParamInt(id, fallback) {
+        const el = document.getElementById(id);
+        if (!el) return fallback;
+        const n = parseInt(el.value, 10);
+        return Number.isFinite(n) ? n : fallback;
+    }
+
+    function getLpDegreeSource(graphA, graphB) {
+        return graphB || graphA;
+    }
+
+    // ----------------------------------------------------------------
+    // Download buttons
+    // ----------------------------------------------------------------
+    function updateDownloadButtons() {
+        if (!_lastAlgo || !_lastDataset) return;
+        const section = document.getElementById('download-section');
+        const container = document.getElementById('download-buttons');
+        section.classList.remove('hidden');
+        container.innerHTML = '';
+
+        const base = `?algo=${encodeURIComponent(_lastAlgo)}&dataset=${encodeURIComponent(_lastDataset)}&k=${_lastK}&opt=${encodeURIComponent(_lastOpt)}`;
+
+        const btnClass = 'inline-flex items-center gap-1 px-4 py-2 bg-gray-200 border border-gray-300 border-b-0 rounded-t text-gray-600 hover:bg-gray-100 transition text-sm';
+        const mk = (label, type) => {
+            const a = document.createElement('a');
+            a.href = `/download${base}&type=${type}`;
+            a.download = '';
+            a.className = btnClass;
+            a.innerHTML = `<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>${label}`;
+            container.appendChild(a);
+        };
+
+        const rankedLabels = { cn: 'Ranked (Top-K IDs)', lp: 'Ranked (Jaccard)', tc: 'Ranked (Components)', khop: 'Ranked (Paths)' };
+        const fullLabels   = { cn: 'Full CN Count',       lp: 'Full Jaccard',     tc: 'Full Triangle Count', khop: `Full ${_lastK}-hop Count` };
+
+        mk(rankedLabels[_lastAlgo] || 'Ranked Result', 'ranked');
+        mk(fullLabels[_lastAlgo]   || 'Full Count',    'full');
+        mk('Execution Summary',                        'summary');
+    }
+
+    // ----------------------------------------------------------------
+    // Socket.IO
+    // ----------------------------------------------------------------
+    const socket = io();
+
+    let _lastFiles = null, _lastAlgo = null, _lastK = 2, _lastTopk = 10, _lastDataset = null, _lastOpt = null;
+
+    function updateDatasetList(datasets) {
+        const selA      = document.getElementById('graph-select-a');
+        const tableBody = document.getElementById('dataset-table-body');
+        const prevA = selA.value;
+        selA.innerHTML = ''; tableBody.innerHTML = '';
+
+        if (!datasets.length) {
+            selA.innerHTML = '<option value="">No graphs found</option>';
+            tableBody.innerHTML = '<tr><td colspan="4" class="py-3 px-4 text-center text-gray-400">No graphs found</td></tr>';
+            return;
+        }
+
+        datasets.filter(d => !d.name.endsWith('_2')).forEach(d => {
+            const label = `${d.name} (${d.nodes.toLocaleString()} nodes, ${d.edges.toLocaleString()} edges)`;
+            const optA = document.createElement('option'); optA.value = d.name; optA.textContent = label; selA.appendChild(optA);
+            const tr = document.createElement('tr');
+            tr.className = 'cursor-pointer hover:bg-blue-50 transition';
+            tr.innerHTML = `<td class="py-3 px-4 font-medium">${d.name}</td>
+                <td class="py-3 px-4 text-right">${d.nodes.toLocaleString()}</td>
+                <td class="py-3 px-4 text-right">${d.edges.toLocaleString()}</td>
+                <td class="py-3 px-4 text-center"><span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">Ready</span></td>`;
+            tr.onclick = () => showDegreeDist(d.name, tr);
+            tableBody.appendChild(tr);
+        });
+
+        if (prevA) selA.value = prevA;
+    }
+
+    function loadDatasets() {
+        fetch('/data-list').then(r => r.json()).then(updateDatasetList)
+            .catch(() => { document.getElementById('dataset-table-body').innerHTML = '<tr><td colspan="4" class="py-3 px-4 text-center text-red-400">Failed to load datasets</td></tr>'; });
+    }
+
+    let _degDistChart = null;
+    function showDegreeDist(dataset, clickedTr) {
+        // 행 선택 표시
+        document.querySelectorAll('#dataset-table-body tr').forEach(r => r.classList.remove('bg-blue-100'));
+        if (clickedTr) clickedTr.classList.add('bg-blue-100');
+
+        const panel = document.getElementById('deg-dist-panel');
+        document.getElementById('deg-dist-title').textContent = dataset;
+        panel.classList.remove('hidden');
+
+        fetch(`/degree-dist/${encodeURIComponent(dataset)}`)
+            .then(r => r.json())
+            .then(({ dist }) => {
+                const labels = dist.map(d => d.degree);
+                const data   = dist.map(d => d.count);
+
+                if (_degDistChart) { _degDistChart.destroy(); _degDistChart = null; }
+
+                _degDistChart = new Chart(document.getElementById('deg-dist-canvas'), {
+                    type: 'bar',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: 'Node count',
+                            data,
+                            backgroundColor: 'rgba(249,115,22,0.68)',
+                            borderColor: 'rgba(249,115,22,1)',
+                            borderWidth: 1,
+                            borderRadius: 2,
+                        }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { title: { display: true, text: 'Degree' }, ticks: { autoSkip: true, maxTicksLimit: 15 } },
+                            y: { title: { display: true, text: 'Node count' }, type: 'logarithmic' },
+                        },
+                        plugins: { legend: { display: false } },
+                    },
+                });
+            })
+            .catch(e => { document.getElementById('deg-dist-title').textContent = `${dataset} (load failed)`; });
+
+        showBlockHeatmap(dataset);
+    }
+
+    function showBlockHeatmap(dataset) {
+        const panel   = document.getElementById('block-heatmap-panel');
+        const loading = document.getElementById('block-heatmap-loading');
+        const canvas  = document.getElementById('block-heatmap-canvas');
+        document.getElementById('block-heatmap-title').textContent = dataset;
+        panel.classList.remove('hidden');
+        loading.classList.remove('hidden');
+
+        fetch(`/graph-heatmap/${encodeURIComponent(dataset)}`)
+            .then(r => r.json())
+            .then(({ K, bucketSize, nodeCount, matrix, maxVal }) => {
+                loading.classList.add('hidden');
+
+                const CELL  = Math.max(3, Math.min(8, Math.floor(480 / K)));
+                const PAD_L = 50, PAD_B = 40, PAD_T = 8, PAD_R = 16;
+                const CB_GAP = 8, CB_W = 10, CB_LABEL = 42; // colorbar
+                const W = PAD_L + K * CELL + PAD_R + CB_GAP + CB_W + CB_LABEL;
+                const H = PAD_T + K * CELL + PAD_B;
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width  = W * dpr;
+                canvas.height = H * dpr;
+                canvas.style.width  = W + 'px';
+                canvas.style.height = H + 'px';
+                canvas.parentElement.style.height = 'auto';
+
+                const ctx = canvas.getContext('2d');
+                ctx.scale(dpr, dpr);
+                ctx.clearRect(0, 0, W, H);
+
+                // 색상 계산 헬퍼 (white → crimson, t ∈ [0,1])
+                const logMax = Math.log1p(maxVal);
+                function cellColor(t) {
+                    const r = Math.round(255 - t * (255 - 220));
+                    const g = Math.round(255 - t * (255 - 20));
+                    const b = Math.round(255 - t * (255 - 60));
+                    return `rgb(${r},${g},${b})`;
+                }
+
+                // 셀 그리기 (log 정규화)
+                for (let i = 0; i < K; i++) {
+                    for (let j = 0; j < K; j++) {
+                        const t = logMax > 0 ? Math.log1p(matrix[i][j]) / logMax : 0;
+                        ctx.fillStyle = cellColor(t);
+                        ctx.fillRect(PAD_L + j * CELL, PAD_T + i * CELL, CELL, CELL);
+                    }
+                }
+
+                // 경계선
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(PAD_L, PAD_T, K * CELL, K * CELL);
+
+                // 축 레이블 (10개 tick)
+                ctx.fillStyle = '#6b7280';
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                const tickStep = Math.max(1, Math.floor(K / 10));
+                for (let i = 0; i <= K; i += tickStep) {
+                    const nodeId = (i * bucketSize).toLocaleString();
+                    const x = PAD_L + i * CELL;
+                    const y = PAD_T + i * CELL;
+                    // X축
+                    ctx.save(); ctx.translate(x, PAD_T + K * CELL + 14);
+                    ctx.rotate(-Math.PI / 4); ctx.textAlign = 'right';
+                    ctx.fillText(nodeId, 0, 0); ctx.restore();
+                    // Y축
+                    ctx.textAlign = 'right';
+                    ctx.fillText(nodeId, PAD_L - 4, y + 4);
+                }
+
+                // 축 제목
+                ctx.fillStyle = '#374151';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Node ID (col)', PAD_L + K * CELL / 2, H - 2);
+                ctx.save();
+                ctx.translate(10, PAD_T + K * CELL / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Node ID (row)', 0, 0);
+                ctx.restore();
+
+                // Colorbar (오른쪽 세로 그라데이션 막대, 히트맵 절반 높이 · 중앙 정렬)
+                const CB_X  = PAD_L + K * CELL + PAD_R + CB_GAP;
+                const CB_H  = Math.round(K * CELL / 2);
+                const CB_Y  = PAD_T + Math.round(K * CELL / 4); // 수직 중앙
+                const grad = ctx.createLinearGradient(0, CB_Y, 0, CB_Y + CB_H);
+                grad.addColorStop(0, cellColor(1));   // top = max (진한 빨강)
+                grad.addColorStop(1, cellColor(0));   // bottom = 0 (흰색)
+                ctx.fillStyle = grad;
+                ctx.fillRect(CB_X, CB_Y, CB_W, CB_H);
+                ctx.strokeStyle = '#d1d5db';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(CB_X, CB_Y, CB_W, CB_H);
+
+                // density → 대표 엣지 수 역산: edges ≈ density * bucketSize²
+                function fmtEdges(density) {
+                    const n = Math.round(density * bucketSize * bucketSize);
+                    if (n === 0) return '0';
+                    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+                    if (n >= 1e3) return (n / 1e3).toFixed(n >= 1e4 ? 0 : 1) + 'k';
+                    return String(n);
+                }
+
+                // Colorbar tick 레이블 (5단계, log 역변환 → 대표 엣지 수)
+                const CB_TICKS = 5;
+                for (let ti = 0; ti <= CB_TICKS; ti++) {
+                    const t      = ti / CB_TICKS;
+                    const yPos   = CB_Y + CB_H * (1 - t);
+                    const density = Math.expm1(t * logMax); // log 역변환
+                    const label  = fmtEdges(density);
+                    // tick 선
+                    ctx.strokeStyle = '#9ca3af';
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(CB_X + CB_W, yPos);
+                    ctx.lineTo(CB_X + CB_W + 4, yPos);
+                    ctx.stroke();
+                    // 레이블
+                    ctx.fillStyle = '#374151';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'left';
+                    ctx.fillText(label, CB_X + CB_W + 6, yPos + 4);
+                }
+            })
+            .catch(() => {
+                loading.textContent = 'Failed to load heatmap data.';
+            });
+    }
+
+    async function uploadGraph() {
+        const fileInput  = document.getElementById('upload-file');
+        const nameInput  = document.getElementById('upload-dataset-name');
+        const statusEl   = document.getElementById('upload-status');
+        const logEl      = document.getElementById('upload-log');
+        const btn        = document.getElementById('btn-upload-run');
+
+        if (!fileInput.files?.length) { statusEl.textContent = 'Please select a file to upload.'; statusEl.className = 'text-xs text-red-600'; return; }
+
+        const form = new FormData();
+        form.append('graphFile', fileInput.files[0]);
+        form.append('datasetName', nameInput.value || '');
+        form.append('socketId', socket.id);
+
+        btn.disabled = true; btn.textContent = 'Uploading...';
+        statusEl.textContent = 'Uploading file…';
+        statusEl.className = 'text-xs text-blue-700';
+        logEl.textContent = '';
+        logEl.classList.remove('hidden');
+
+        try {
+            const res  = await fetch('/upload-graph', { method: 'POST', body: form });
+            const json = await res.json();
+            if (!res.ok || !json.ok) throw new Error(json.message || 'Upload failed');
+            btn.textContent = 'Preprocessing...';
+            statusEl.textContent = 'File uploaded. Preprocessing in progress…';
+            fileInput.value = '';
+            document.getElementById('upload-file-label').textContent = 'No file chosen';
+        } catch (e) {
+            statusEl.textContent = `Failed: ${e.message}`;
+            statusEl.className = 'text-xs text-red-600';
+            btn.disabled = false; btn.textContent = 'Upload + Preprocess';
+        }
+    }
+
+    socket.on('connect', loadDatasets);
+    socket.on('datasets-updated', updateDatasetList);
+
+    socket.on('preprocess-progress', ({ text }) => {
+        const logEl = document.getElementById('upload-log');
+        logEl.classList.remove('hidden');
+        logEl.textContent += text;
+        logEl.scrollTop = logEl.scrollHeight;
+    });
+
+    socket.on('preprocess-done', ({ ok, dataset, message, datasets }) => {
+        const statusEl = document.getElementById('upload-status');
+        const btn      = document.getElementById('btn-upload-run');
+        const logEl    = document.getElementById('upload-log');
+        logEl.textContent += ok
+            ? `\n> Done: ${dataset} — ${message}\n`
+            : `\n> Warning: ${message}\n`;
+        logEl.scrollTop = logEl.scrollHeight;
+        statusEl.textContent = ok
+            ? `Done: ${dataset} (preprocessing complete)`
+            : `Partial: ${message}`;
+        statusEl.className = ok ? 'text-xs text-green-700' : 'text-xs text-yellow-700';
+        btn.disabled = false; btn.textContent = 'Upload + Preprocess';
+        if (datasets) updateDatasetList(datasets);
+    });
+
+    socket.on('preprocess-error', ({ dataset, message }) => {
+        const statusEl = document.getElementById('upload-status');
+        const btn      = document.getElementById('btn-upload-run');
+        const logEl    = document.getElementById('upload-log');
+        logEl.textContent += `\n> ERROR: ${message}\n`;
+        logEl.scrollTop = logEl.scrollHeight;
+        statusEl.textContent = `Failed: ${message}`;
+        statusEl.className = 'text-xs text-red-600';
+        btn.disabled = false; btn.textContent = 'Upload + Preprocess';
+    });
+
+    socket.on('progress', ({ text }) => {
+        const el = document.getElementById('result-text');
+        el.innerHTML += text.replace(/\n/g, '<br>');
+        el.scrollTop = el.scrollHeight;
+    });
+
+    socket.on('result', ({ algo, files, timings }) => {
+        _lastAlgo    = algo;
+        _lastFiles   = files;
+        _lastK       = getParamInt('param-k', 2);
+        _lastTopk    = Math.min(getParamInt('param-topk', 10), 100);
+        _lastDataset = document.getElementById('graph-select-a').value;
+        _lastOpt     = (() => {
+            const gpu = document.getElementById('gpu-toggle').checked;
+            if (gpu) return 'gpu';
+            const b = document.getElementById('opt-block-workload').checked;
+            const p = document.getElementById('opt-partial-agg').checked;
+            if (b && p) return 'block-partial';
+            if (b) return 'block';
+            if (p) return 'partial';
+            return 'none';
+        })();
+        updateDownloadButtons();
+
+        // Text tab
+        const el = document.getElementById('result-text');
+
+        if (timings && Object.keys(timings).length) {
+            const timeEntries = Object.entries(timings).filter(([k]) => !k.startsWith('_'));
+            const statEntries = Object.entries(timings).filter(([k]) =>  k.startsWith('_'));
+
+            if (timeEntries.length) {
+                el.innerHTML += `<br><span class="text-blue-700 font-bold">[Timing]</span><br>`;
+                timeEntries.forEach(([name, sec]) => {
+                    el.innerHTML += `  ${name}: <span class="text-green-600">${sec.toFixed(4)}s</span><br>`;
+                });
+            }
+            if (statEntries.length) {
+                const statLabels = { _flops: 'flops', _compressed: 'compressed', _totalfd: 'total fds', _finalCount: 'final count', _timeSpent: 'time spent' };
+                el.innerHTML += `<br><span class="text-blue-700 font-bold">[Stats]</span><br>`;
+                statEntries.forEach(([k, v]) => {
+                    const label = statLabels[k] || k.slice(1);
+                    const isTime = k === '_timeSpent';
+                    el.innerHTML += `  ${label}: <span class="text-yellow-600">${isTime ? v.toFixed(4) + 's' : v.toLocaleString()}</span><br>`;
+                });
+            }
+            el.innerHTML += '<br>';
+        }
+
+        el.innerHTML += '<span class="text-green-600 font-bold">Done</span><br><br>';
+        files.forEach(({ label, content }) => {
+            if (!content) return;
+            el.innerHTML += `<span class="text-blue-700 font-bold">[${label}]</span><br>`;
+            const lines = content.split('\n');
+            el.innerHTML += lines.slice(0, 200).join('\n').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+            if (lines.length > 200) el.innerHTML += `<br><span class="text-gray-400">... (${lines.length - 200} more lines)</span>`;
+            el.innerHTML += '<br><br>';
+        });
+
+        el.scrollTop = 0;
+
+        // Pre-render chart and graph (visible if those tabs are currently active)
+        renderChart(files, algo, _lastK, _lastTopk);
+        renderCytoscape(files, algo, _lastK, _lastTopk);
+
+        document.getElementById('btn-execute-run').disabled = false;
+        document.getElementById('btn-execute-run').textContent = 'EXECUTE';
+    });
+
+    socket.on('error', ({ message }) => {
+        const el = document.getElementById('result-text');
+        el.innerHTML += `<span class="text-red-600">ERROR: ${message}</span><br>`;
+        document.getElementById('btn-execute-run').disabled = false;
+        document.getElementById('btn-execute-run').textContent = 'EXECUTE';
+    });
+
+    // ----------------------------------------------------------------
+    // Execute
+    // ----------------------------------------------------------------
+    function runAlgo() {
+        const graphA = document.getElementById('graph-select-a').value;
+        if (!graphA) { alert('Please select Graph 1 (Matrix A).'); return; }
+
+        const algo  = document.querySelector('input[name="algo"]:checked').value;
+        const topk  = Math.min(getParamInt('param-topk', 10), 100);
+        const k     = getParamInt('param-k', 2);
+        const max_paths = getParamInt('param-max-paths', 20);
+        const graphB = graphA;
+        const lpDegreeGraph = graphA;
+
+        const threadsSel = document.getElementById('threads-select');
+        const threads = threadsSel?.value || 11;
+
+        const gpuOn         = document.getElementById('gpu-toggle').checked;
+        const blockWorkload = gpuOn ? null : document.getElementById('opt-block-workload').checked;
+        const partialAgg    = gpuOn ? null : document.getElementById('opt-partial-agg').checked;
+
+        const graphBDesc = document.getElementById('graph-b-info')?.textContent || '(auto)';
+
+        // Reset UI
+        document.getElementById('result-text').innerHTML =
+            `&gt; Graph: ${graphA}<br>&gt; Algorithm: ${algo}<br>&gt; Running...<br>`;
+        switchResultTab('text');
+        if (_cyInstance) { _cyInstance.destroy(); _cyInstance = null; }
+        document.getElementById('cy-stage').innerHTML =
+            '<div class="w-full h-full flex items-center justify-center text-gray-400 font-medium">Running...</div>';
+        document.getElementById('graph-title').textContent = 'Result Graph';
+
+        document.getElementById('btn-execute-run').disabled = true;
+        document.getElementById('btn-execute-run').textContent = 'Running...';
+
+        socket.emit('run', { algo, graphA, graphB, lpDegreeGraph, threads, topk, k, max_paths, blockWorkload, partialAgg, gpuOn });
+    }
+
+    // ----------------------------------------------------------------
+    // Init
+    // ----------------------------------------------------------------
+    switchTab('tab-execute');
+    updateParams();
+    toggleMode();
+    toggleGPUStreams();
+    </script>
+</body>
+</html>

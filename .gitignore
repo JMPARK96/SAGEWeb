@@ -1,0 +1,43 @@
+# Local dependencies and configuration
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# Build products
+*.o
+*.obj
+*.exe
+*.so
+*.a
+/sage/spgemm*
+/sage/cn
+/sage/link_prediction
+/sage/triangle
+/sage/k_hop
+/sage-gpu/spgemm*
+/sage-gpu/cn
+/sage-gpu/link_prediction
+/sage-gpu/triangle
+/sage-gpu/k_hop
+
+# Runtime files
+/sage/data/
+/sage/datasets/
+/sage/logs/
+/sage/result/
+/sage/meta.bin
+/sage/test_result*
+/sage-gpu/data/
+/sage-gpu/datasets/
+/sage-gpu/logs/
+/sage-gpu/result/
+/sage-gpu/meta.bin
+core.*
+
+# Editor settings
+.idea/
+.vscode/
+.devcontainer/

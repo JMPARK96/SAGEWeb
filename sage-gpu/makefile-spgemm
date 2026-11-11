@@ -1,0 +1,49 @@
+#
+#
+#
+
+#  remove the # from the front of the following lines to enable
+#  the corresponding option during C compilation
+#TRACEFLAG = -DTRACE
+#DEBUGFLAG = -DDEBUG
+#PROF = -p
+
+BOOSTINCLUDE=/usr/include
+#BOOSTINCLUDEEXT=/usr/local/include/boost-numeric-bindings
+BOOSTLIB = /usr/lib/x86_64-linux-gnu
+CUDA_PATH = /usr/local/cuda
+CUFILELIB = $(CUDA_PATH)/lib64
+NVCC = $(CUDA_PATH)/bin/nvcc
+
+
+
+INCLUDE=./core
+ALGSDIR=./algs
+
+EXECS=  spmv als spgemm
+
+OBJS=   spmv.o als.o spgemm.o
+
+SRCS=   spmv.cpp als.cpp spgemm.cpp
+
+CFLAGS  = -g -I$(BOOSTINCLUDE) -I$(INCLUDE) $(TRACEFLAG) $(DEBUGFLAG) $(PROF) -ltbb #-I$(BOOSTINCLUDEEXT) 
+DFLAGS  = -Dvid_32 -Dval_32 #-Daddweight -Dadjlist -Dbin
+
+# g++ $(CFLAGS) $(DFLAGS) -std=c++11 -c -o ${ALGSDIR}/$@.o ${ALGSDIR}/$@.cpp -fopenmp
+# g++ $(CFLAGS) $(DFLAGS) ${ALGSDIR}/$@.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o $@ -fopenmp #-llapack 
+
+all : $(EXECS)
+	@echo -n >Everything
+
+$(EXECS) :
+	$(NVCC) -lineinfo $(CFLAGS) $(DFLAGS) -std=c++17 -c -o ${ALGSDIR}/$@.o ${ALGSDIR}/$@.cu -Xcompiler -fopenmp --gpu-architecture=sm_86 --extended-lambda
+	$(NVCC) -lineinfo $(CFLAGS) $(DFLAGS) ${ALGSDIR}/$@.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Xlinker=-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o $@ -Xcompiler -fopenmp --gpu-architecture=sm_86
+	rm -f ${ALGSDIR}/*.o
+
+$(OBJS) : engine-spgemm.hpp
+
+disk:
+	$(BIN)/format -  hp0a < disk.script
+
+clean:
+	rm -f $(EXECS)

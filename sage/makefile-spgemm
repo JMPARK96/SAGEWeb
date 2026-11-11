@@ -1,0 +1,85 @@
+#
+#
+#
+
+#  remove the # from the front of the following lines to enable
+#  the corresponding option during C compilation
+#TRACEFLAG = -DTRACE
+#DEBUGFLAG = -DDEBUG
+#PROF = -p
+
+BOOSTINCLUDE=/usr/include
+#BOOSTINCLUDEEXT=/usr/local/include/boost-numeric-bindings
+BOOSTLIB = /usr/lib/x86_64-linux-gnu
+
+INCLUDE=./core
+ALGSDIR=./algs
+
+EXECS=  spmv als spgemm spgemm-node spgemm-nonaggre spgemm-node-nonaggre spgemm-plain spgemm-plain-node spgemm-plain-nonaggre spgemm-plain-node-nonaggre cn link_prediction triangle k_hop
+
+OBJS=   spmv.o als.o spgemm.o
+
+SRCS=   spmv.cpp als.cpp spgemm.cpp
+
+CFLAGS  = -g -I$(BOOSTINCLUDE) -I$(INCLUDE) $(TRACEFLAG) $(DEBUGFLAG) $(PROF) #-I$(BOOSTINCLUDEEXT) 
+DFLAGS  = -Dvid_32 -Daddweight -Dsymmetric #-Dadjlist -Dbin
+
+all : $(EXECS)
+	@echo -n >Everything
+
+spgemm spmv als :
+	g++ $(CFLAGS) $(DFLAGS) -std=c++11 -c -o ${ALGSDIR}/$@.o ${ALGSDIR}/$@.cpp -fopenmp
+	g++ $(CFLAGS) $(DFLAGS) ${ALGSDIR}/$@.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o $@ -fopenmp #-llapack
+
+spgemm-node :
+	g++ $(CFLAGS) $(DFLAGS) -DUSE_NODE_ENGINE -std=c++11 -c -o ${ALGSDIR}/spgemm-node.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) $(DFLAGS) -DUSE_NODE_ENGINE ${ALGSDIR}/spgemm-node.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-node -fopenmp
+
+spgemm-nonaggre :
+	g++ $(CFLAGS) $(DFLAGS) -DNO_PARTIAL_AGGRE -std=c++11 -c -o ${ALGSDIR}/spgemm-nonaggre.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) $(DFLAGS) -DNO_PARTIAL_AGGRE ${ALGSDIR}/spgemm-nonaggre.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-nonaggre -fopenmp
+
+spgemm-node-nonaggre :
+	g++ $(CFLAGS) $(DFLAGS) -DUSE_NODE_ENGINE -DNO_PARTIAL_AGGRE -std=c++11 -c -o ${ALGSDIR}/spgemm-node-nonaggre.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) $(DFLAGS) -DUSE_NODE_ENGINE -DNO_PARTIAL_AGGRE ${ALGSDIR}/spgemm-node-nonaggre.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-node-nonaggre -fopenmp
+
+spgemm-plain :
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -std=c++11 -c -o ${ALGSDIR}/spgemm-plain.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric ${ALGSDIR}/spgemm-plain.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-plain -fopenmp
+
+spgemm-plain-node :
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -DUSE_NODE_ENGINE -std=c++11 -c -o ${ALGSDIR}/spgemm-plain-node.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -DUSE_NODE_ENGINE ${ALGSDIR}/spgemm-plain-node.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-plain-node -fopenmp
+
+spgemm-plain-nonaggre :
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -DNO_PARTIAL_AGGRE -std=c++11 -c -o ${ALGSDIR}/spgemm-plain-nonaggre.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -DNO_PARTIAL_AGGRE ${ALGSDIR}/spgemm-plain-nonaggre.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-plain-nonaggre -fopenmp
+
+spgemm-plain-node-nonaggre :
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -DUSE_NODE_ENGINE -DNO_PARTIAL_AGGRE -std=c++11 -c -o ${ALGSDIR}/spgemm-plain-node-nonaggre.o ${ALGSDIR}/spgemm.cpp -fopenmp
+	g++ $(CFLAGS) -Dvid_32 -Dsymmetric -DUSE_NODE_ENGINE -DNO_PARTIAL_AGGRE ${ALGSDIR}/spgemm-plain-node-nonaggre.o -L$(BOOSTLIB) -lboost_system -lboost_thread -lrt -Wl,-rpath=${BOOSTLIB} -DBOOST_ASIO_DISABLE_EPOLL -o spgemm-plain-node-nonaggre -fopenmp
+
+cn :
+	g++ $(CFLAGS) $(DFLAGS) -std=c++11 -o cn ${ALGSDIR}/cn.cpp
+	rm -f ${ALGSDIR}/*.o
+
+link_prediction :
+	g++ $(CFLAGS) $(DFLAGS) -std=c++11 -o link_prediction ${ALGSDIR}/link_prediction.cpp
+	rm -f ${ALGSDIR}/*.o
+
+triangle :
+	g++ $(CFLAGS) $(DFLAGS) -std=c++11 -o triangle ${ALGSDIR}/triangle.cpp
+	rm -f ${ALGSDIR}/*.o
+
+k_hop :
+	g++ $(CFLAGS) $(DFLAGS) -std=c++11 -o k_hop ${ALGSDIR}/k_hop.cpp
+	rm -f ${ALGSDIR}/*.o
+
+$(OBJS) : engine-spgemm.hpp
+
+disk:
+	$(BIN)/format -  hp0a < disk.script
+
+clean:
+	rm -f $(EXECS)
+	rm -f ${ALGSDIR}/*.o

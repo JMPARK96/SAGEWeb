@@ -1,9 +1,7 @@
 # SAGE
 ## SAGE: A Storage-Based Approach for Scalable and Efficient Sparse Generalized Matrix-Matrix Multiplication
 
-This repository provides a reference implementation of *SAGE* as described in the following paper:
-> SAGE: A Storage-Based Approach for Scalable and Efficient Sparse Generalized Matrix-Matrix Multiplication<br>
-> Original SAGE research paper: https://doi.org/10.1145/3583780.3615044<br>
+This directory contains the SAGE CPU engine used by SAGEWeb. For the web application and complete build instructions, see the [main README](../README.md).
 
 This project is written in standard C++. It can be built by running Makefile in the source code directory.
 
@@ -49,4 +47,4 @@ Current build takes a weighted edgelist text file for each input matrix.
 ### Experiments
 Wikipedia: http://konect.cc/networks/wikipedia_link_en/  
 Yahoo: https://webscope.sandbox.yahoo.com  
-S datasets plus UK-2005 and SK-2005 are provided through Stanford Snap and SuiteSparse Matrix Collection (See 'S datasets.png')
+Additional datasets are available from Stanford SNAP and the SuiteSparse Matrix Collection. Datasets are not bundled with this repository.

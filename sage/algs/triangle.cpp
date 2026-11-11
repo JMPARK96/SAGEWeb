@@ -249,9 +249,13 @@ int main(int argc, char ** argv) {
         << " merge "       << merge;
     time_entry t_spgemm("triangle_spgemm_CxA");
     t_spgemm.start_time();
-    system(cmd.str().c_str());
+    int rc = system(cmd.str().c_str());
     t_spgemm.stop_time();
     timer.add_entry(t_spgemm);
+    if (rc != 0) {
+        fprintf(stderr, "spgemm failed (%d): %s\n", rc, cmd.str().c_str());
+        return 1;
+    }
 
     // D[i][i] 읽어서 삼각형 수 계산
     time_entry t_count("triangle_count_triangles");

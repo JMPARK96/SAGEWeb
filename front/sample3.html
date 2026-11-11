@@ -39,7 +39,7 @@
         <div id="tab-overview" class="bg-white p-8 rounded-lg shadow-md">
             <div class="mb-8 border-b pb-6">
                 <h2 class="text-3xl font-bold mb-2 text-gray-800">Welcome to SAGEWeb</h2>
-                <p class="text-gray-600 text-lg">SAGEWeb is an interactive demo platform for SAGE, a storage-based SpGEMM system that scales large-scale graph analytics beyond main memory limits.</p>
+                <p class="text-gray-600 text-lg">SAGEWeb lets users upload graphs, run graph-analysis tasks, and explore results in a web browser, using SAGE as its storage-based SpGEMM backend.</p>
                 <div class="mt-3 flex flex-wrap gap-2 text-xs">
                     <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold">Conference: The Web Conference (WWW)</span>
                     <span class="bg-gray-100 text-gray-800 px-3 py-1 rounded-full font-semibold">Topic: Storage-Based SpGEMM</span>
@@ -51,14 +51,12 @@
                 <div class="bg-gray-50 border border-gray-200 p-6 rounded-lg">
                     <h3 class="font-bold text-gray-800 mb-3 flex items-center">
                         <span class="bg-blue-900 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs mr-2">1</span>
-                        Paper Abstract
+                        Demo Overview
                     </h3>
                     <p class="text-gray-600 text-sm leading-relaxed text-justify">
-                        Sparse generalized matrix-matrix multiplication (SpGEMM) is a fundamental operation for real-world network analysis. 
-                        With the increasing size of networks, single-machine methods lack scalability due to main memory limits, 
-                        while distributed systems suffer from heavy inter-machine communication overhead. 
-                        To address this dilemma, we propose <strong>SAGE</strong>, a novel storage-based SpGEMM approach that stores graphs in storage (e.g., SSD) 
-                        and loads only the necessary parts into main memory via a 3-layer architecture, achieving both high scalability and cost-efficiency.
+                        Select a prepared dataset or upload an edge list, choose a graph-analysis task, and inspect its results without writing an analysis program.
+                        SAGEWeb supports common neighbor finding, link prediction, triangle counting, and k-hop path counting, with text, chart, and interactive graph views.
+                        Its <strong>SAGE</strong> backend stores graph matrices in external storage and loads the portions needed for SpGEMM into memory.
                     </p>
                 </div>
 
@@ -128,14 +126,14 @@
                         <span class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Step 02</span>
                         <h4 class="font-bold text-gray-700 mb-2">Algorithm Execution</h4>
                         <p class="text-gray-500 text-xs leading-relaxed">
-                            Configure your execution hyperparameters (GPU processing, buffer size, thread count, and optimization flags) and run the selected graph algorithm via SpGEMM.
+                            Choose an algorithm and its parameters. Performance mode also provides thread-count and optimization settings.
                         </p>
                     </div>
                     <div class="flex flex-col border border-dashed rounded p-4 bg-gray-50">
                         <span class="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">Step 03</span>
                         <h4 class="font-bold text-gray-700 mb-2">Performance &amp; Analysis</h4>
                         <p class="text-gray-500 text-xs leading-relaxed">
-                            Visualize execution time breakdown, storage-memory I/O savings, and compare performance directly with standard in-memory benchmarks.
+                            Inspect analysis results and execution-time breakdowns, compare SAGE optimization settings, and download the outputs.
                         </p>
                     </div>
                 </div>
@@ -265,14 +263,8 @@
                         <div class="space-y-2 text-sm bg-red-50 p-3 rounded border border-red-100">
                             <label class="flex justify-between items-center"><span class="text-gray-700 font-medium">Block-based Workload Allocation</span> <input type="checkbox" id="opt-block-workload" checked class="w-4 h-4 text-red-600"></label>
                             <label class="flex justify-between items-center"><span class="text-gray-700 font-medium">In-memory Partial Aggregation</span>  <input type="checkbox" id="opt-partial-agg"   checked class="w-4 h-4 text-red-600"></label>
-                            <label class="flex justify-between items-center border-b border-red-200 pb-2"><span class="text-gray-700 font-medium">GPU Processing</span> <input type="checkbox" id="gpu-toggle" class="w-4 h-4 text-red-600" onchange="toggleGPUStreams()"></label>
+                            <label class="flex justify-between items-center border-b border-red-200 pb-2"><span class="text-gray-700 font-medium">GPU Processing (experimental)</span> <input type="checkbox" id="gpu-toggle" class="w-4 h-4 text-red-600" onchange="toggleGPUStreams()"></label>
                             <div class="pt-1">
-                                <label class="block text-gray-700 text-xs mb-1">Buffer Size</label>
-                                <select class="w-full border-red-200 rounded p-1.5 mb-2 bg-white text-sm">
-                                    <option value="128">128 MB</option><option value="256" selected>256 MB</option>
-                                    <option value="512">512 MB</option><option value="1024">1024 MB</option>
-                                    <option value="2048">2048 MB</option><option value="4096">4096 MB</option>
-                                </select>
                                 <label class="block text-gray-700 text-xs mb-1">Threads</label>
                                 <select id="threads-select" class="w-full border-red-200 rounded p-1.5 bg-white text-sm">
                                     <option value="1">1 Threads</option><option value="2">2 Threads</option>
@@ -295,7 +287,7 @@
                     <button id="btn-res-text"  onclick="switchResultTab('text')"  class="px-4 py-2 bg-white border border-gray-300 border-b-0 rounded-t font-bold text-gray-700">Text</button>
                     <button id="btn-res-chart" onclick="switchResultTab('chart')" class="px-4 py-2 bg-gray-200 border border-gray-300 border-b-0 rounded-t text-gray-600 hover:bg-gray-100">Chart</button>
                     <button id="btn-res-graph" onclick="switchResultTab('graph')" class="px-4 py-2 bg-gray-200 border border-gray-300 border-b-0 rounded-t text-gray-600 hover:bg-gray-100">Graphs</button>
-                    <div id="download-section" class="hidden ml-auto flex gap-1" id="download-buttons-wrap">
+                    <div id="download-section" class="hidden ml-auto flex gap-1">
                         <div class="flex gap-1" id="download-buttons"></div>
                     </div>
                 </div>
@@ -862,7 +854,7 @@
         cn:   { ko: 'SpGEMM(A×A)으로 두 노드의 공통 이웃 수를 계산합니다. 소셜 추천·유사도 분석에 활용됩니다.', en: 'Counts common neighbors between node pairs via SpGEMM(A×A). Used for social recommendation and similarity analysis.' },
         lp:   { ko: 'A×A SpGEMM 후 degree로 Jaccard 유사도를 산출해 미래 링크 생성 가능성을 예측합니다.',      en: 'Computes Jaccard similarity from A×A SpGEMM and node degrees to predict future link formation.' },
         tc:   { ko: 'A²×A SpGEMM의 대각 원소로 각 노드의 삼각형 참여 수를 계산합니다. 커뮤니티 감지·클러스터링에 활용됩니다.', en: 'Counts triangle participation per node using diagonal entries of A²×A SpGEMM. Used for community detection and clustering.' },
-        khop: { ko: 'SpGEMM을 k회 반복해 k-hop 내 도달 가능한 경로 수를 계산합니다. 노드 간 관계 강도 분석에 활용됩니다.',      en: 'Iterates SpGEMM k times to count reachable paths within k hops. Used for analyzing relationship strength between nodes.' },
+        khop: { ko: '행렬 거듭제곱으로 정확히 k개의 간선을 지나는 워크 수를 계산합니다. 정점을 반복 방문할 수 있습니다.', en: 'Counts walks of exactly k edges using matrix powers; vertices may be revisited.' },
     };
 
     function updateGraphBInfo() {

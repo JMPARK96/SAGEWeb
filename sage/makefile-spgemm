@@ -15,7 +15,9 @@ BOOSTLIB = /usr/lib/x86_64-linux-gnu
 INCLUDE=./core
 ALGSDIR=./algs
 
-EXECS=  spmv als spgemm spgemm-node spgemm-nonaggre spgemm-node-nonaggre spgemm-plain spgemm-plain-node spgemm-plain-nonaggre spgemm-plain-node-nonaggre cn link_prediction triangle k_hop
+EXECS=  spgemm spgemm-node spgemm-nonaggre spgemm-node-nonaggre spgemm-plain spgemm-plain-node spgemm-plain-nonaggre spgemm-plain-node-nonaggre cn link_prediction triangle k_hop
+
+.PHONY: all clean $(EXECS)
 
 OBJS=   spmv.o als.o spgemm.o
 

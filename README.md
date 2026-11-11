@@ -2,7 +2,7 @@
 
 ### A Web-Based Platform for Large-Scale SpGEMM-Based Graph Analysis
 
-**[Live Demo](http://166.104.110.115:3001/)** · **[Demo Video](https://youtu.be/a0E-Z_eYkqM)** · **[SAGE Source Code](sage/)** · **[SAGE Paper](https://doi.org/10.1145/3583780.3615044)**
+**[Live Demo](http://166.104.110.115:3001/)** · **[Demo Video](https://youtu.be/a0E-Z_eYkqM)** · **[SAGE Source Code](sage/)**
 
 SAGEWeb enables users to analyze large graphs conveniently and efficiently through a web browser. Users can upload a graph or select a prepared dataset, choose an analysis task, and inspect the results without writing an analysis program.
 
@@ -46,17 +46,19 @@ Datasets, generated results, execution logs, compiled binaries, and installed de
 
 ## Run locally
 
-The CPU application requires Linux, a C++11-capable compiler, `make`, Boost development libraries, and Node.js with npm. The hosted demo was checked with Node.js 20.
+The CPU application requires Linux, Git, a C++11-capable compiler, `make`, Boost development libraries, and Node.js with npm. The hosted demo was checked with Node.js 20.
 
 Install the native build dependencies on Ubuntu:
 
 ```bash
-sudo apt-get install build-essential libboost-system-dev libboost-thread-dev
+sudo apt-get install git build-essential libboost-system-dev libboost-thread-dev
 ```
 
 Build the CPU engines and analysis programs. Run these targets sequentially:
 
 ```bash
+git clone https://github.com/JMPARK96/SAGEWeb.git
+cd SAGEWeb
 cd sage
 make -f makefile-spgemm spgemm spgemm-node spgemm-nonaggre spgemm-node-nonaggre
 make -f makefile-spgemm spgemm-plain spgemm-plain-node spgemm-plain-nonaggre spgemm-plain-node-nonaggre
@@ -72,10 +74,6 @@ Open `http://localhost:3001` and upload a graph. For a first check, use [`exampl
 
 The browser interface loads JavaScript libraries from public CDNs, so browser internet access is required.
 
-## Research background
-
-SAGEWeb builds on the previously published SAGE engine:
-
-> Myung-Hwan Jang, Yunyong Ko, Hyuck-Moo Gwon, Ikhyeon Jo, Yongjun Park, and Sang-Wook Kim. **SAGE: A Storage-Based Approach for Scalable and Efficient Sparse Generalized Matrix-Matrix Multiplication.** 2023. [DOI: 10.1145/3583780.3615044](https://doi.org/10.1145/3583780.3615044).
+## License
 
 The backend's original license is provided in [`sage/LICENSE`](sage/LICENSE). Retain the license and copyright notices included with the source and third-party components.

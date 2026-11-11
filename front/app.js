@@ -25,6 +25,8 @@ const GPU_BIN  = (name) => {
 };
 
 function ensureRuntimeDirs() {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.mkdirSync(LOGS_DIR, { recursive: true });
     fs.mkdirSync(path.join(SAGE_DIR, 'result'), { recursive: true });
     fs.mkdirSync(path.join(SAGE_GPU_DIR, 'result'), { recursive: true });
 }
@@ -78,6 +80,8 @@ function listDatasets() {
         const m = f.match(/^(.+)_a\.graphinfo$/);
         if (!m) continue;
         const name = m[1];
+        // Uploaded graphs have both A and B inputs; intermediate powers only have A.
+        if (!fs.existsSync(path.join(DATA_DIR, `${name}_b.graphinfo`))) continue;
         const info = parseGraphinfo(path.join(DATA_DIR, f));
         if (!info) continue;
         datasets.push({ name, nodes: info.num_nodes, edges: info.num_edges });
@@ -615,7 +619,7 @@ function saveTimingLog(algo, dataset, params, timings) {
     }
 }
 
-function getLatestTimingLog(algo, dataset, k, gpuOn, blockWorkload, partialAgg, topk, max_paths) {
+function getLatestTimingLog(algo, dataset, k, gpuOn, blockWorkload, partialAgg, topk, max_paths, threads) {
     try {
         const key    = algoKey(algo, k);
         const opt    = optKey(gpuOn, blockWorkload, partialAgg);
@@ -625,6 +629,7 @@ function getLatestTimingLog(algo, dataset, k, gpuOn, blockWorkload, partialAgg, 
             .sort().reverse();
         if (!files.length) return null;
         const log = JSON.parse(fs.readFileSync(path.join(LOGS_DIR, files[0]), 'utf8'));
+        if ((parseInt(log.params?.threads) || 11) !== (parseInt(threads) || 11)) return null;
         // algo-specific 파라미터 불일치 시 캐시 미스
         if (topk      !== undefined && log.params?.topk      !== topk)      return null;
         if (max_paths !== undefined && log.params?.max_paths !== max_paths)  return null;
@@ -751,10 +756,20 @@ io.on('connection', (socket) => {
     console.log('connected:', socket.id);
 
     socket.on('run', (data) => {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+            socket.emit('error', { message: 'Invalid run request' });
+            return;
+        }
+        const dataset = sanitizeDatasetName(data.graphA || data.dataset);
+        if (!dataset) {
+            socket.emit('error', { message: 'Invalid dataset name. Use letters/numbers/_/- only.' });
+            return;
+        }
         const runReq = {
             ...data,
-            graphA: data.graphA || data.dataset,
-            graphB: data.graphB || data.graphA || data.dataset,
+            dataset,
+            graphA: dataset,
+            graphB: dataset,
         };
 
         console.log('run:', runReq);
@@ -777,7 +792,7 @@ io.on('connection', (socket) => {
             ? (parseInt(runReq.max_paths) || 20)
             : undefined;
         const timingLog = existingResults
-            ? getLatestTimingLog(runReq.algo, base, runReq.k, runReq.gpuOn, runReq.blockWorkload, runReq.partialAgg, reqTopk, reqMaxPaths)
+            ? getLatestTimingLog(runReq.algo, base, runReq.k, runReq.gpuOn, runReq.blockWorkload, runReq.partialAgg, reqTopk, reqMaxPaths, runReq.threads)
             : null;
         if (existingResults && timingLog) {
             socket.emit('progress', { text: `> Loaded cached result for ${runReq.algo} (${base})\n` });

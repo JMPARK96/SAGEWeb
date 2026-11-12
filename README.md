@@ -39,33 +39,3 @@ The hosted demo starts in CPU mode. GPU execution is experimental; use CPU mode 
 | [`sage/`](sage/) | SAGE CPU engine, graph-analysis implementations, and build instructions. |
 | [`front/`](front/) | Web interface and Express/Socket.IO server. |
 | [`sage-gpu/`](sage-gpu/) | Experimental GPU implementation. |
-
-## Run locally
-
-The CPU application requires Linux, Git, a C++11-capable compiler, `make`, Boost development libraries, and Node.js with npm. The hosted demo was checked with Node.js 20.
-
-Install the native build dependencies on Ubuntu:
-
-```bash
-sudo apt-get install git build-essential libboost-system-dev libboost-thread-dev
-```
-
-Build the CPU engines and analysis programs. Run these targets sequentially:
-
-```bash
-git clone https://github.com/JMPARK96/SAGEWeb.git
-cd SAGEWeb
-cd sage
-make -f makefile-spgemm spgemm spgemm-node spgemm-nonaggre spgemm-node-nonaggre
-make -f makefile-spgemm spgemm-plain spgemm-plain-node spgemm-plain-nonaggre spgemm-plain-node-nonaggre
-make -f makefile-spgemm cn link_prediction triangle k_hop
-cd ..
-mkdir -p sage/data sage/logs sage/result sage-gpu/result
-cd front
-npm ci
-PORT=3001 npm start
-```
-
-Open `http://localhost:3001` and upload a graph. For a first check, use [`examples/tiny_graph.txt`](examples/tiny_graph.txt), an undirected edge list with 12 vertices and 2 triangles. List each undirected edge once; preprocessing adds its reverse direction.
-
-The browser interface loads JavaScript libraries from public CDNs, so browser internet access is required.

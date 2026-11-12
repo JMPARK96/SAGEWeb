@@ -40,8 +40,6 @@ The hosted demo starts in CPU mode. GPU execution is experimental; use CPU mode 
 | [`front/`](front/) | Web interface and Express/Socket.IO server. |
 | [`sage-gpu/`](sage-gpu/) | Experimental GPU implementation. |
 
-Datasets, generated results, execution logs, compiled binaries, and installed dependencies are not included in this repository.
-
 ## Run locally
 
 The CPU application requires Linux, Git, a C++11-capable compiler, `make`, Boost development libraries, and Node.js with npm. The hosted demo was checked with Node.js 20.

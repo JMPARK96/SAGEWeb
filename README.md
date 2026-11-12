@@ -73,7 +73,3 @@ PORT=3001 npm start
 Open `http://localhost:3001` and upload a graph. For a first check, use [`examples/tiny_graph.txt`](examples/tiny_graph.txt), an undirected edge list with 12 vertices and 2 triangles. List each undirected edge once; preprocessing adds its reverse direction.
 
 The browser interface loads JavaScript libraries from public CDNs, so browser internet access is required.
-
-## License
-
-The backend's original license is provided in [`sage/LICENSE`](sage/LICENSE). Retain the license and copyright notices included with the source and third-party components.

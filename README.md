@@ -23,8 +23,6 @@ The hosted demo starts in CPU mode. GPU execution is experimental; use CPU mode 
 
 [![Watch the SAGEWeb demonstration](https://img.youtube.com/vi/a0E-Z_eYkqM/hqdefault.jpg)](https://youtu.be/a0E-Z_eYkqM)
 
-This video shows an earlier version of SAGEWeb. The current live demo has updated interface colors and WWW demo branding.
-
 ## Supported analyses
 
 | Task | Output |

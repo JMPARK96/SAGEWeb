@@ -1,7 +1,7 @@
 # SAGE
 ## SAGE: A Storage-Based Approach for Scalable and Efficient Sparse Generalized Matrix-Matrix Multiplication
 
-This directory contains the SAGE CPU engine used by SAGEWeb. For the web application and complete build instructions, see the [main README](../README.md).
+This directory contains the SAGE CPU engine used by SAGEWeb.
 
 This project is written in standard C++. It can be built by running Makefile in the source code directory.
 
